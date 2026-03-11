@@ -1,12 +1,6 @@
-# Nu primesc notă pentru că nu am pus titlu și descriere
+# Wonderfully Intelligent house
 
-### Folosiți template-ul corespunzător grupei voastre!
-
-| Laborant  | Link template                                |
-|-----------|----------------------------------------------|
-| Dragoș B  | https://github.com/Ionnier/oop-template      |
-| Tiberiu M | https://github.com/MaximTiberiu/oop-template |
-| Marius MC | https://github.com/mcmarius/oop-template     |
+Acest proiect isi propune sa creeeze si sa simuleze o casa automata/inteligenta in care sa existe diferite aparate cu diferite functiuni si interactiuni. Sper sa fac si interfata frumoasa.
 
 ### Important!
 
