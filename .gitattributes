@@ -1,1 +1,6 @@
+* text=auto eol=lf
+*.cpp linguist-language=cpp
+*.h linguist-language=cpp
+tastatura.txt linguist-generated=true
+build/** linguist-generated=true
 ext/** linguist-vendored
