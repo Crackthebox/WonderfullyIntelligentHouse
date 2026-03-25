@@ -6,7 +6,7 @@ class LightSource {
 private:
     bool isOn;
     int brightness;
-
+    bool isValid(int level) const;
 public:
     explicit LightSource(bool state = false, int bright = 0);
     ~LightSource(); 

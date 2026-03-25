@@ -3,7 +3,9 @@
 #include <string>
 #include <vector>
 #include <cstring>
-
+bool LightSource::isValid(int level) const {
+    return (level >= 0 && level <= 100);
+}
 LightSource::LightSource(bool state, int bright) : isOn(state), brightness(bright) {
 }
 
@@ -13,8 +15,14 @@ LightSource::~LightSource() {
 void LightSource::turnOn() { isOn = true; brightness = 100; }
 void LightSource::turnOff() { isOn = false; brightness = 0; }
 void LightSource::setBrightness(int level) { 
-    brightness = level; 
-    isOn = (brightness > 0);
+    isOn=false;
+    if (isValid(level)){
+        isOn=true;
+        brightness = level;
+    }
+    else{
+        std::cout<<"valoare invalida";
+    }
 }
 
 std::ostream& operator<<(std::ostream& os, const LightSource& light) {
