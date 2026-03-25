@@ -98,7 +98,7 @@ Room::~Room() {
 void Room::regulateClimate() {
     double current = thermostat.getCurrentTemp();
     double desired = thermostat.getDesiredTemp();
-
+    light.setBrightness(80);
     if (current < desired - 0.5) {
         heater.turnOn();
         ac.turnOff();
@@ -113,6 +113,7 @@ void Room::regulateClimate() {
 
 void Room::setEcoMode() {
     light.turnOff();
+    thermostat.updateCurrentTemp(21.0);
     thermostat.setDesiredTemp(19.0);
     regulateClimate();
 }
@@ -134,7 +135,7 @@ std::ostream& operator<<(std::ostream& os, const Room& room) {
     return os;
 }
 
-House::House(std::string houseAddress) : address(houseAddress) {
+House::House(const std::string& houseAddress) : address(houseAddress) {
 }
 
 House::~House() {

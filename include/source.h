@@ -8,7 +8,7 @@ private:
     int brightness;
 
 public:
-    LightSource(bool state = false, int bright = 0);
+    explicit LightSource(bool state = false, int bright = 0);
     ~LightSource(); 
     void turnOn();
     void turnOff();
@@ -22,7 +22,7 @@ private:
     bool isActive;
 
 public:
-    Heater(bool state = false);
+    explicit Heater(bool state = false);
     ~Heater(); 
     
     void turnOn();
@@ -36,7 +36,7 @@ private:
     bool isActive;
 
 public:
-    AC(bool state = false);
+    explicit AC(bool state = false);
     ~AC();
     
     void turnOn();
@@ -52,7 +52,7 @@ private:
     double desiredTemp;
 
 public:
-    Thermostat(const char* model = "Generic", double current = 20.0, double desired = 22.0);
+    explicit Thermostat(const char* model = "Generic", double current = 20.0, double desired = 22.0);
     
     Thermostat(const Thermostat& other);           
     Thermostat& operator=(const Thermostat& other); 
@@ -91,7 +91,7 @@ private:
     std::vector<Room> rooms;
 
 public:
-    House(std::string houseAddress);
+    explicit House(const std::string& houseAddress);
     ~House(); 
     void printRoom(int x);
     void addRoom(const Room& room);
