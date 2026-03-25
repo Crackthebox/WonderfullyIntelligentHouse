@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 #include <cstring>
-bool LightSource::isValid(int level) const {
+bool LightSource::isValid(int level) {
     return (level >= 0 && level <= 100);
 }
 LightSource::LightSource(bool state, int bright) : isOn(state), brightness(bright) {
