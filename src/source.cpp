@@ -57,7 +57,9 @@ std::ostream& operator<<(std::ostream& os, const AC& ac) {
     os << "AC: " << (ac.isActive ? "Pornit" : "Oprit");
     return os;
 }
-
+bool Thermostat::isValidTemp(double temp) {
+    return (temp >= 10.0 && temp <= 35.0);
+}
 Thermostat::Thermostat(const char* model, double current, double desired) 
     : currentTemp(current), desiredTemp(desired) {
     modelName = new char[std::strlen(model) + 1];
@@ -86,7 +88,11 @@ Thermostat::~Thermostat() {
 }
 
 void Thermostat::setDesiredTemp(double temp) { desiredTemp = temp; }
-void Thermostat::updateCurrentTemp(double temp) { currentTemp = temp; }
+void Thermostat::updateCurrentTemp(double temp) { 
+    if(isValidTemp(temp))
+    currentTemp = temp; 
+    else std::cout<<"temperatura invalida";
+}
 double Thermostat::getCurrentTemp() const { return currentTemp; }
 double Thermostat::getDesiredTemp() const { return desiredTemp; }
 

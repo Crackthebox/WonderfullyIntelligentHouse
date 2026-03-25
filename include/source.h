@@ -50,7 +50,7 @@ private:
     char* modelName;
     double currentTemp;
     double desiredTemp;
-
+    static bool isValidTemp(double temp);
 public:
     explicit Thermostat(const char* model = "Generic", double current = 20.0, double desired = 22.0);
     
