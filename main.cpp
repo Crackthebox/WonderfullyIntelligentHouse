@@ -115,7 +115,9 @@ int main() {
                                 case 8: std::cout << myHouse << "\n"; break;
                                 case 9: window.close(); break;
                             }
-                        } catch (...) {}
+                        } } catch (const SmartHomeException& e) {
+                            std::cerr << e.what() << '\n';
+                        }     catch (...) {}
                     }
                 }
                 for (int i = 0; i < myHouse.getRoomCount(); ++i) {
