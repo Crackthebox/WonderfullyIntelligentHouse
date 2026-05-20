@@ -137,7 +137,7 @@ int main() {
             }
         }
 
-        if (simClock.getElapsedTime().asSeconds() >= 1.0f) {
+        if (simClock.getElapsedTime().asSeconds() >= 0.5f) {
             myHouse.simulationStep();
             simClock.restart();
         }
