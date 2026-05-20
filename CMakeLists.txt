@@ -18,7 +18,7 @@ include(cmake/CopyHelper.cmake)
 ###############################################################################
 
 # Cautam instalarea nativa de SFML (cea instalata cu pacman)
-find_package(SFML 2 COMPONENTS graphics window system REQUIRED)
+find_package(SFML COMPONENTS graphics window system REQUIRED)
 
 ###############################################################################
 
