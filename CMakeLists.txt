@@ -18,8 +18,7 @@ include(cmake/CopyHelper.cmake)
 ###############################################################################
 
 # Cautam instalarea nativa de SFML (cea instalata cu pacman)
-find_package(SFML COMPONENTS graphics window system REQUIRED)
-
+find_package(SFML 2.5 COMPONENTS graphics window system REQUIRED)
 ###############################################################################
 
 add_executable(${MAIN_EXECUTABLE_NAME}
@@ -40,8 +39,7 @@ target_include_directories(${MAIN_EXECUTABLE_NAME} SYSTEM PRIVATE
 )
 
 # AICI LEGAM BIBLIOTECA GRAFICA DE PROIECTUL TAU
-target_link_libraries(${MAIN_EXECUTABLE_NAME} PRIVATE sfml-graphics sfml-window sfml-system)
-
+target_link_libraries(${MAIN_EXECUTABLE_NAME} sfml-graphics sfml-window sfml-system)
 ###############################################################################
 
 install(TARGETS ${MAIN_EXECUTABLE_NAME} DESTINATION ${DESTINATION_DIR})
