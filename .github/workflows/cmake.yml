@@ -202,10 +202,17 @@ jobs:
 
       - name: Install packages
         uses: ./.github/actions/install-packages
-      - name: Install SFML dependency
+      - name: Install SFML
+        shell: bash
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libsfml-dev
+          if [[ "$RUNNER_OS" == "Linux" ]]; then
+            sudo apt-get update && sudo apt-get install -y libsfml-dev
+          elif [[ "$RUNNER_OS" == "macOS" ]]; then
+            brew install sfml
+          elif [[ "$RUNNER_OS" == "Windows" ]]; then
+            # Windows are nevoie de vcpkg. Pe runner-ul de GitHub, acesta este preinstalat
+            vcpkg install sfml:x64-windows --triplet x64-windows
+          fi
       - name: Configure CMake
         uses: ./.github/actions/configure-cmake
         with:
