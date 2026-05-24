@@ -37,10 +37,8 @@ private:
     int brightness;
 public:
     explicit LightSource(bool state = false, int bright = 0);
-    
     void setBrightness(int level);
     int getBrightness() const;
-
     void optimizeForClimate(double currentTemp, double desiredTemp) override;
     std::shared_ptr<SmartDevice> clone() const override;
     void print(std::ostream& os) const override;
@@ -49,7 +47,6 @@ public:
 class Heater : public SmartDevice {
 public:
     explicit Heater(bool state = false);
-    
     void optimizeForClimate(double currentTemp, double desiredTemp) override;
     std::shared_ptr<SmartDevice> clone() const override;
     void print(std::ostream& os) const override;
@@ -58,7 +55,6 @@ public:
 class AC : public SmartDevice {
 public:
     explicit AC(bool state = false);
-    
     void optimizeForClimate(double currentTemp, double desiredTemp) override;
     std::shared_ptr<SmartDevice> clone() const override;
     void print(std::ostream& os) const override;
@@ -67,7 +63,6 @@ public:
 class SmartBlinds : public SmartDevice {
 public:
     explicit SmartBlinds(bool state = false);
-
     void optimizeForClimate(double currentTemp, double desiredTemp) override;
     std::shared_ptr<SmartDevice> clone() const override;
     void print(std::ostream& os) const override;
@@ -111,6 +106,12 @@ public:
     void changetemp(double t);
     void forceLightsBrightness(int level);
 
+    void simulationTick(double outsideTemp, bool comfortMode);
+
+    std::string getName() const { return name; }
+    Thermostat getThermostat() const { return thermostat; }
+    const std::vector<std::shared_ptr<SmartDevice>>& getDevices() const { return devices; }
+
     friend std::ostream& operator<<(std::ostream& os, const Room& room);
 };
 
@@ -118,6 +119,8 @@ class House {
 private:
     std::string address;
     std::vector<Room> rooms;
+    double outsideTemp;
+    bool comfortModeActive;
 
 public:
     explicit House(const std::string& houseAddress);
@@ -130,6 +133,11 @@ public:
     void changetemp(double t, int nr);
     Room& getroom(int index);
     int getRoomCount() const;
+
+    void simulationStep();
+    void setOutsideTemp(double t) { outsideTemp = t; }
+    double getOutsideTemp() const { return outsideTemp; }
+    bool isComfortMode() const { return comfortModeActive; }
     
     friend std::ostream& operator<<(std::ostream& os, const House& house);
 };
