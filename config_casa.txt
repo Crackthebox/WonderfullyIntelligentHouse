@@ -1,0 +1,5 @@
+1
+Strada Magnifica nr. 10
+2
+Living 25.0 22.0
+Dormitor 18.0 22.0

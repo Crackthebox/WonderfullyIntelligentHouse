@@ -1,48 +1,71 @@
+#ifndef SOURCE_H
+#define SOURCE_H
+
 #include <iostream>
 #include <string>
 #include <vector>
+#include <memory>
+#include "exceptions.h"
 
-class LightSource {
-private:
+class SmartDevice {
+protected:
+    std::string deviceName;
     bool isOn;
+    static int totalDevices;
+
+public:
+    SmartDevice(const std::string& name, bool state);
+    SmartDevice(const SmartDevice& other);
+    virtual ~SmartDevice();
+
+    static int getTotalDevices();
+
+    virtual void turnOn();
+    virtual void turnOff();
+    bool getState() const;
+    std::string getName() const;
+
+    virtual void optimizeForClimate(double currentTemp, double desiredTemp) = 0;
+    virtual std::shared_ptr<SmartDevice> clone() const = 0;
+    virtual void print(std::ostream& os) const = 0;
+
+    friend std::ostream& operator<<(std::ostream& os, const SmartDevice& dev);
+};
+
+class LightSource : public SmartDevice {
+private:
     int brightness;
-    static bool isValid(int level);
 public:
     explicit LightSource(bool state = false, int bright = 0);
-    ~LightSource(); 
-    void turnOn();
-    void turnOff();
     void setBrightness(int level);
-    
-    friend std::ostream& operator<<(std::ostream& os, const LightSource& light);
+    int getBrightness() const;
+    void optimizeForClimate(double currentTemp, double desiredTemp) override;
+    std::shared_ptr<SmartDevice> clone() const override;
+    void print(std::ostream& os) const override;
 };
 
-class Heater {
-private:
-    bool isActive;
-
+class Heater : public SmartDevice {
 public:
     explicit Heater(bool state = false);
-    ~Heater(); 
-    
-    void turnOn();
-    void turnOff();
-    
-    friend std::ostream& operator<<(std::ostream& os, const Heater& heater);
+    void optimizeForClimate(double currentTemp, double desiredTemp) override;
+    std::shared_ptr<SmartDevice> clone() const override;
+    void print(std::ostream& os) const override;
 };
 
-class AC {
-private:
-    bool isActive;
-
+class AC : public SmartDevice {
 public:
     explicit AC(bool state = false);
-    ~AC();
-    
-    void turnOn();
-    void turnOff();
-    
-    friend std::ostream& operator<<(std::ostream& os, const AC& ac);
+    void optimizeForClimate(double currentTemp, double desiredTemp) override;
+    std::shared_ptr<SmartDevice> clone() const override;
+    void print(std::ostream& os) const override;
+};
+
+class SmartBlinds : public SmartDevice {
+public:
+    explicit SmartBlinds(bool state = false);
+    void optimizeForClimate(double currentTemp, double desiredTemp) override;
+    std::shared_ptr<SmartDevice> clone() const override;
+    void print(std::ostream& os) const override;
 };
 
 class Thermostat {
@@ -50,10 +73,8 @@ private:
     char* modelName;
     double currentTemp;
     double desiredTemp;
-    static bool isValidTemp(double temp);
 public:
     explicit Thermostat(const char* model = "Generic", double current = 20.0, double desired = 22.0);
-    
     Thermostat(const Thermostat& other);           
     Thermostat& operator=(const Thermostat& other); 
     ~Thermostat();                                  
@@ -69,19 +90,28 @@ public:
 class Room {
 private:
     std::string name;
-    LightSource light;
-    Heater heater;
-    AC ac;
     Thermostat thermostat;
+    std::vector<std::shared_ptr<SmartDevice>> devices;
 
 public:
     Room(std::string roomName, const Thermostat& term);
-    ~Room(); 
+    Room(const Room& other);
+    Room& operator=(const Room& other);
+    ~Room() = default;
     
+    void addDevice(std::shared_ptr<SmartDevice> device);
     void regulateClimate(); 
     void setEcoMode();
     void setComfortMode();
     void changetemp(double t);
+    void forceLightsBrightness(int level);
+
+    void simulationTick(double outsideTemp, bool comfortMode);
+
+    std::string getName() const { return name; }
+    Thermostat getThermostat() const { return thermostat; }
+    const std::vector<std::shared_ptr<SmartDevice>>& getDevices() const { return devices; }
+
     friend std::ostream& operator<<(std::ostream& os, const Room& room);
 };
 
@@ -89,15 +119,27 @@ class House {
 private:
     std::string address;
     std::vector<Room> rooms;
+    double outsideTemp;
+    bool comfortModeActive;
 
 public:
     explicit House(const std::string& houseAddress);
-    ~House(); 
-    void printRoom(int x);
+    ~House() = default; 
+    
+    std::string getAddress() const;
     void addRoom(const Room& room);
     void enterHouse();
     void leaveHouse();
     void changetemp(double t, int nr);
     Room& getroom(int index);
+    int getRoomCount() const;
+
+    void simulationStep();
+    void setOutsideTemp(double t) { outsideTemp = t; }
+    double getOutsideTemp() const { return outsideTemp; }
+    bool isComfortMode() const { return comfortModeActive; }
+    
     friend std::ostream& operator<<(std::ostream& os, const House& house);
 };
+
+#endif
