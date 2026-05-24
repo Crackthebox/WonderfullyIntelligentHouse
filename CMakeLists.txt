@@ -24,13 +24,18 @@ find_package(SFML 2.5 COMPONENTS graphics window system REQUIRED)
 add_executable(${MAIN_EXECUTABLE_NAME}
     main.cpp
 )
+
+# MODIFICARE COMPLETĂ: Toate sursele .cpp din subfolderul src/, scrise exclusiv cu litere mici
 target_sources(${MAIN_EXECUTABLE_NAME}
     PRIVATE
-        src/source.cpp
+        src/patterns.cpp
+        src/devices.cpp
+        src/room_house.cpp
 )
 
 set_compiler_flags(RUN_SANITIZERS ${USE_ASAN} TARGET_NAMES ${MAIN_EXECUTABLE_NAME})
 
+# Include folderul principal "include" pentru headere
 target_include_directories(${MAIN_EXECUTABLE_NAME} PUBLIC
     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
 )

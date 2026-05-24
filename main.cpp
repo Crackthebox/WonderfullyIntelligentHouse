@@ -4,8 +4,11 @@
 #include <cstdlib>
 #include <ctime>
 #include <SFML/Graphics.hpp>
-#include "source.h"
 #include "exceptions.h"
+#include "templates.h"
+#include "patterns.h"
+#include "devices.h"
+#include "room_house.h"
 
 struct RoomVisual { int gridX; int gridY; };
 
@@ -28,6 +31,12 @@ struct Button { sf::RectangleShape rect; sf::Text text; int id; };
 
 int main() {
     srand(static_cast<unsigned int>(time(nullptr)));
+    
+    Sensor<double> outsideTempSensor("Termometru Exterior", 10.0);
+    Sensor<bool> rainSensor("Senzor Ploaie", false);
+    
+    Logger::getInstance().log("Pornire Simulator Smart Home...");
+    
     House myHouse("Casa Dinamica POO");
     std::vector<RoomVisual> roomVisuals;
 
@@ -42,10 +51,12 @@ int main() {
                 std::string rName; double cTemp, dTemp;
                 fin >> rName >> cTemp >> dTemp;
                 Room r(rName, Thermostat("Generic", cTemp, dTemp));
-                r.addDevice(std::make_shared<LightSource>());
-                r.addDevice(std::make_shared<Heater>());
-                r.addDevice(std::make_shared<AC>());
-                r.addDevice(std::make_shared<SmartBlinds>());
+                
+                r.addDevice(DeviceFactory::createDevice("Lumina"));
+                r.addDevice(DeviceFactory::createDevice("Calorifer"));
+                r.addDevice(DeviceFactory::createDevice("Aer Conditionat"));
+                r.addDevice(DeviceFactory::createDevice("Jaluzele"));
+                
                 myHouse.addRoom(r);
                 roomVisuals.push_back(getNewRoomPosition(roomVisuals));
             }
@@ -53,9 +64,9 @@ int main() {
         fin.close();
     } else {
         Room r1("Living", Thermostat("Model-X", 25.0, 22.0));
-        r1.addDevice(std::make_shared<LightSource>());
-        r1.addDevice(std::make_shared<Heater>());
-        r1.addDevice(std::make_shared<AC>());
+        r1.addDevice(DeviceFactory::createDevice("Lumina"));
+        r1.addDevice(DeviceFactory::createDevice("Calorifer"));
+        r1.addDevice(DeviceFactory::createDevice("Aer Conditionat"));
         myHouse.addRoom(r1);
         roomVisuals.push_back({0, 0});
     }
@@ -98,10 +109,10 @@ int main() {
                             switch (btn.id) {
                                 case 0: { 
                                     Room newRoom("Camera_" + std::to_string(myHouse.getRoomCount()), Thermostat("Gen", 15.0 + (rand() % 15), 22.0));
-                                    newRoom.addDevice(std::make_shared<LightSource>(false, 0));
-                                    newRoom.addDevice(std::make_shared<Heater>());
-                                    newRoom.addDevice(std::make_shared<AC>());
-                                    newRoom.addDevice(std::make_shared<SmartBlinds>());
+                                    newRoom.addDevice(DeviceFactory::createDevice("Lumina"));
+                                    newRoom.addDevice(DeviceFactory::createDevice("Calorifer"));
+                                    newRoom.addDevice(DeviceFactory::createDevice("Aer Conditionat"));
+                                    newRoom.addDevice(DeviceFactory::createDevice("Jaluzele"));
                                     myHouse.addRoom(newRoom); roomVisuals.push_back(getNewRoomPosition(roomVisuals));
                                     break;
                                 }
@@ -116,7 +127,7 @@ int main() {
                                 case 9: window.close(); break;
                             }
                         } catch (const SmartHomeException& e) {
-                            std::cerr << e.what() << '\n';
+                            Logger::getInstance().error(e.what());
                         } catch (...) {}
                     }
                 }
@@ -124,14 +135,14 @@ int main() {
                     float rx = offsetX + roomVisuals[i].gridX * (roomSize + 15);
                     float ry = offsetY + roomVisuals[i].gridY * (roomSize + 15);
                     if (mx >= rx && mx <= rx + roomSize && my >= ry && my <= ry + roomSize) {
-                        for (auto& dev : myHouse.getroom(i).getDevices()) {
-                            auto light = std::dynamic_pointer_cast<LightSource>(dev);
-                            if (light) {
-                                if (light->getState()) {
-                                    light->turnOff();
-                                } else {
-                                    light->setBrightness(100);
-                                }
+                        
+                        auto lights = filterDevicesByType<LightSource>(myHouse.getroom(i).getDevices());
+                        
+                        for (auto& light : lights) {
+                            if (light->getState()) {
+                                light->turnOff();
+                            } else {
+                                light->setBrightness(100);
                             }
                         }
                     }
