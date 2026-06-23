@@ -75,6 +75,9 @@ int main() {
     window.setFramerateLimit(60);
     sf::Font font; font.loadFromFile("C:\\Windows\\Fonts\\arial.ttf");
 
+    sf::View houseView(sf::FloatRect(0.f, 0.f, 900.f, 800.f));
+    houseView.setViewport(sf::FloatRect(0.f, 0.f, 0.75f, 1.f));
+
     std::vector<Button> buttons;
     std::vector<std::string> btnLabels = {
         "Adauga Camera", "Intra in Casa (Comfort)", "Iesi din Casa (Eco)", 
@@ -103,8 +106,11 @@ int main() {
             if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
                 float mx = static_cast<float>(event.mouseButton.x);
                 float my = static_cast<float>(event.mouseButton.y);
+                
+                bool buttonClicked = false;
                 for (auto& btn : buttons) {
                     if (btn.rect.getGlobalBounds().contains(mx, my)) {
+                        buttonClicked = true;
                         try {
                             switch (btn.id) {
                                 case 0: { 
@@ -131,22 +137,31 @@ int main() {
                         } catch (...) {}
                     }
                 }
-                for (int i = 0; i < myHouse.getRoomCount(); ++i) {
-                    float rx = offsetX + roomVisuals[i].gridX * (roomSize + 15);
-                    float ry = offsetY + roomVisuals[i].gridY * (roomSize + 15);
-                    if (mx >= rx && mx <= rx + roomSize && my >= ry && my <= ry + roomSize) {
-                        
-                        auto lights = filterDevicesByType<LightSource>(myHouse.getroom(i).getDevices());
-                        
-                        for (auto& light : lights) {
-                            if (light->getState()) {
-                                light->turnOff();
-                            } else {
-                                light->setBrightness(100);
+                
+                if (!buttonClicked) {
+                    sf::Vector2f worldPos = window.mapPixelToCoords(sf::Vector2i(event.mouseButton.x, event.mouseButton.y), houseView);
+                    for (int i = 0; i < myHouse.getRoomCount(); ++i) {
+                        float rx = offsetX + roomVisuals[i].gridX * (roomSize + 15);
+                        float ry = offsetY + roomVisuals[i].gridY * (roomSize + 15);
+                        if (worldPos.x >= rx && worldPos.x <= rx + roomSize && worldPos.y >= ry && worldPos.y <= ry + roomSize) {
+                            auto lights = filterDevicesByType<LightSource>(myHouse.getroom(i).getDevices());
+                            for (auto& light : lights) {
+                                if (light->getState()) {
+                                    light->turnOff();
+                                } else {
+                                    light->setBrightness(100);
+                                }
                             }
                         }
                     }
                 }
+            }
+            
+            if (event.type == sf::Event::KeyPressed) {
+                if (event.key.code == sf::Keyboard::Left) houseView.move(-25.f, 0.f);
+                if (event.key.code == sf::Keyboard::Right) houseView.move(25.f, 0.f);
+                if (event.key.code == sf::Keyboard::Up) houseView.move(0.f, -25.f);
+                if (event.key.code == sf::Keyboard::Down) houseView.move(0.f, 25.f);
             }
         }
 
@@ -156,13 +171,8 @@ int main() {
         }
 
         window.clear(sf::Color(21, 23, 30)); 
-        sf::RectangleShape topHeader(sf::Vector2f(1200, 70)); topHeader.setFillColor(sf::Color(32, 38, 51)); window.draw(topHeader);
-        sf::Text globalText; globalText.setFont(font); globalText.setCharacterSize(18); globalText.setFillColor(sf::Color(52, 211, 153)); globalText.setPosition(30, 22);
-        globalText.setString("Temp Exterior: " + std::to_string(static_cast<int>(myHouse.getOutsideTemp())) + " C");
-        window.draw(globalText);
-        sf::RectangleShape panel(sf::Vector2f(300, 800)); panel.setPosition(900, 0); panel.setFillColor(sf::Color(28, 33, 46)); window.draw(panel);
-        for (auto& btn : buttons) { window.draw(btn.rect); window.draw(btn.text); }
-        
+
+        window.setView(houseView);
         for (int i = 0; i < myHouse.getRoomCount(); ++i) {
             float rx = offsetX + roomVisuals[i].gridX * (roomSize + 15);
             float ry = offsetY + roomVisuals[i].gridY * (roomSize + 15);
@@ -176,11 +186,17 @@ int main() {
             window.draw(roomShape);
             
             std::string runStatus = "INERTIE (spre afara)";
+            
+            auto heaters = filterDevicesByType<Heater>(myHouse.getroom(i).getDevices());
+            auto acUnits = filterDevicesByType<AC>(myHouse.getroom(i).getDevices());
+
             if (hasLightOn) {
                 runStatus = "STABIL";
-                for (const auto& dev : myHouse.getroom(i).getDevices()) {
-                    if (dev->getName() == "Calorifer" && dev->getState()) runStatus = "INCALZESTE ^";
-                    if (dev->getName() == "Aer Conditionat" && dev->getState()) runStatus = "RACESTE v";
+                for (const auto& h : heaters) {
+                    if (h->getState()) runStatus = "INCALZESTE ^";
+                }
+                for (const auto& ac : acUnits) {
+                    if (ac->getState()) runStatus = "RACESTE v";
                 }
             }
 
@@ -203,6 +219,15 @@ int main() {
                 edgeSlot = (edgeSlot + 1) % 4;
             }
         }
+
+        window.setView(window.getDefaultView());
+        sf::RectangleShape topHeader(sf::Vector2f(1200, 70)); topHeader.setFillColor(sf::Color(32, 38, 51)); window.draw(topHeader);
+        sf::Text globalText; globalText.setFont(font); globalText.setCharacterSize(18); globalText.setFillColor(sf::Color(52, 211, 153)); globalText.setPosition(30, 22);
+        globalText.setString("Temp Exterior: " + std::to_string(static_cast<int>(myHouse.getOutsideTemp())) + " C");
+        window.draw(globalText);
+        sf::RectangleShape panel(sf::Vector2f(300, 800)); panel.setPosition(900, 0); panel.setFillColor(sf::Color(28, 33, 46)); window.draw(panel);
+        for (auto& btn : buttons) { window.draw(btn.rect); window.draw(btn.text); }
+        
         window.display();
     }
     return 0;
