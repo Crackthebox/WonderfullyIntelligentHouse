@@ -73,7 +73,7 @@ int main() {
 
     sf::RenderWindow window(sf::VideoMode(1200, 800), "Smart Home Real-Time Simulator");
     window.setFramerateLimit(60);
-    sf::Font font; font.loadFromFile("C:\\Windows\\Fonts\\arial.ttf");
+    sf::Font font; font.loadFromFile("ARIAL.TTF");
 
     sf::View houseView(sf::FloatRect(0.f, 0.f, 900.f, 800.f));
     houseView.setViewport(sf::FloatRect(0.f, 0.f, 0.75f, 1.f));
