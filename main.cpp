@@ -4,8 +4,11 @@
 #include <cstdlib>
 #include <ctime>
 #include <SFML/Graphics.hpp>
-#include "source.h"
 #include "exceptions.h"
+#include "templates.h"
+#include "patterns.h"
+#include "devices.h"
+#include "room_house.h"
 
 struct RoomVisual { int gridX; int gridY; };
 
@@ -28,6 +31,12 @@ struct Button { sf::RectangleShape rect; sf::Text text; int id; };
 
 int main() {
     srand(static_cast<unsigned int>(time(nullptr)));
+    
+    Sensor<double> outsideTempSensor("Termometru Exterior", 10.0);
+    Sensor<bool> rainSensor("Senzor Ploaie", false);
+    
+    Logger::getInstance().log("Pornire Simulator Smart Home...");
+    
     House myHouse("Casa Dinamica POO");
     std::vector<RoomVisual> roomVisuals;
 
@@ -42,10 +51,12 @@ int main() {
                 std::string rName; double cTemp, dTemp;
                 fin >> rName >> cTemp >> dTemp;
                 Room r(rName, Thermostat("Generic", cTemp, dTemp));
-                r.addDevice(std::make_shared<LightSource>());
-                r.addDevice(std::make_shared<Heater>());
-                r.addDevice(std::make_shared<AC>());
-                r.addDevice(std::make_shared<SmartBlinds>());
+                
+                r.addDevice(DeviceFactory::createDevice("Lumina"));
+                r.addDevice(DeviceFactory::createDevice("Calorifer"));
+                r.addDevice(DeviceFactory::createDevice("Aer Conditionat"));
+                r.addDevice(DeviceFactory::createDevice("Jaluzele"));
+                
                 myHouse.addRoom(r);
                 roomVisuals.push_back(getNewRoomPosition(roomVisuals));
             }
@@ -53,9 +64,9 @@ int main() {
         fin.close();
     } else {
         Room r1("Living", Thermostat("Model-X", 25.0, 22.0));
-        r1.addDevice(std::make_shared<LightSource>());
-        r1.addDevice(std::make_shared<Heater>());
-        r1.addDevice(std::make_shared<AC>());
+        r1.addDevice(DeviceFactory::createDevice("Lumina"));
+        r1.addDevice(DeviceFactory::createDevice("Calorifer"));
+        r1.addDevice(DeviceFactory::createDevice("Aer Conditionat"));
         myHouse.addRoom(r1);
         roomVisuals.push_back({0, 0});
     }
@@ -63,6 +74,9 @@ int main() {
     sf::RenderWindow window(sf::VideoMode(1200, 800), "Smart Home Real-Time Simulator");
     window.setFramerateLimit(60);
     sf::Font font; font.loadFromFile("C:\\Windows\\Fonts\\arial.ttf");
+
+    sf::View houseView(sf::FloatRect(0.f, 0.f, 900.f, 800.f));
+    houseView.setViewport(sf::FloatRect(0.f, 0.f, 0.75f, 1.f));
 
     std::vector<Button> buttons;
     std::vector<std::string> btnLabels = {
@@ -92,16 +106,19 @@ int main() {
             if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
                 float mx = static_cast<float>(event.mouseButton.x);
                 float my = static_cast<float>(event.mouseButton.y);
+                
+                bool buttonClicked = false;
                 for (auto& btn : buttons) {
                     if (btn.rect.getGlobalBounds().contains(mx, my)) {
+                        buttonClicked = true;
                         try {
                             switch (btn.id) {
                                 case 0: { 
                                     Room newRoom("Camera_" + std::to_string(myHouse.getRoomCount()), Thermostat("Gen", 15.0 + (rand() % 15), 22.0));
-                                    newRoom.addDevice(std::make_shared<LightSource>(false, 0));
-                                    newRoom.addDevice(std::make_shared<Heater>());
-                                    newRoom.addDevice(std::make_shared<AC>());
-                                    newRoom.addDevice(std::make_shared<SmartBlinds>());
+                                    newRoom.addDevice(DeviceFactory::createDevice("Lumina"));
+                                    newRoom.addDevice(DeviceFactory::createDevice("Calorifer"));
+                                    newRoom.addDevice(DeviceFactory::createDevice("Aer Conditionat"));
+                                    newRoom.addDevice(DeviceFactory::createDevice("Jaluzele"));
                                     myHouse.addRoom(newRoom); roomVisuals.push_back(getNewRoomPosition(roomVisuals));
                                     break;
                                 }
@@ -116,17 +133,19 @@ int main() {
                                 case 9: window.close(); break;
                             }
                         } catch (const SmartHomeException& e) {
-                            std::cerr << e.what() << '\n';
+                            Logger::getInstance().error(e.what());
                         } catch (...) {}
                     }
                 }
-                for (int i = 0; i < myHouse.getRoomCount(); ++i) {
-                    float rx = offsetX + roomVisuals[i].gridX * (roomSize + 15);
-                    float ry = offsetY + roomVisuals[i].gridY * (roomSize + 15);
-                    if (mx >= rx && mx <= rx + roomSize && my >= ry && my <= ry + roomSize) {
-                        for (auto& dev : myHouse.getroom(i).getDevices()) {
-                            auto light = std::dynamic_pointer_cast<LightSource>(dev);
-                            if (light) {
+                
+                if (!buttonClicked) {
+                    sf::Vector2f worldPos = window.mapPixelToCoords(sf::Vector2i(event.mouseButton.x, event.mouseButton.y), houseView);
+                    for (int i = 0; i < myHouse.getRoomCount(); ++i) {
+                        float rx = offsetX + roomVisuals[i].gridX * (roomSize + 15);
+                        float ry = offsetY + roomVisuals[i].gridY * (roomSize + 15);
+                        if (worldPos.x >= rx && worldPos.x <= rx + roomSize && worldPos.y >= ry && worldPos.y <= ry + roomSize) {
+                            auto lights = filterDevicesByType<LightSource>(myHouse.getroom(i).getDevices());
+                            for (auto& light : lights) {
                                 if (light->getState()) {
                                     light->turnOff();
                                 } else {
@@ -137,6 +156,13 @@ int main() {
                     }
                 }
             }
+            
+            if (event.type == sf::Event::KeyPressed) {
+                if (event.key.code == sf::Keyboard::Left) houseView.move(-25.f, 0.f);
+                if (event.key.code == sf::Keyboard::Right) houseView.move(25.f, 0.f);
+                if (event.key.code == sf::Keyboard::Up) houseView.move(0.f, -25.f);
+                if (event.key.code == sf::Keyboard::Down) houseView.move(0.f, 25.f);
+            }
         }
 
         if (simClock.getElapsedTime().asSeconds() >= 0.5f) {
@@ -145,13 +171,8 @@ int main() {
         }
 
         window.clear(sf::Color(21, 23, 30)); 
-        sf::RectangleShape topHeader(sf::Vector2f(1200, 70)); topHeader.setFillColor(sf::Color(32, 38, 51)); window.draw(topHeader);
-        sf::Text globalText; globalText.setFont(font); globalText.setCharacterSize(18); globalText.setFillColor(sf::Color(52, 211, 153)); globalText.setPosition(30, 22);
-        globalText.setString("Temp Exterior: " + std::to_string(static_cast<int>(myHouse.getOutsideTemp())) + " C");
-        window.draw(globalText);
-        sf::RectangleShape panel(sf::Vector2f(300, 800)); panel.setPosition(900, 0); panel.setFillColor(sf::Color(28, 33, 46)); window.draw(panel);
-        for (auto& btn : buttons) { window.draw(btn.rect); window.draw(btn.text); }
-        
+
+        window.setView(houseView);
         for (int i = 0; i < myHouse.getRoomCount(); ++i) {
             float rx = offsetX + roomVisuals[i].gridX * (roomSize + 15);
             float ry = offsetY + roomVisuals[i].gridY * (roomSize + 15);
@@ -165,11 +186,17 @@ int main() {
             window.draw(roomShape);
             
             std::string runStatus = "INERTIE (spre afara)";
+            
+            auto heaters = filterDevicesByType<Heater>(myHouse.getroom(i).getDevices());
+            auto acUnits = filterDevicesByType<AC>(myHouse.getroom(i).getDevices());
+
             if (hasLightOn) {
                 runStatus = "STABIL";
-                for (const auto& dev : myHouse.getroom(i).getDevices()) {
-                    if (dev->getName() == "Calorifer" && dev->getState()) runStatus = "INCALZESTE ^";
-                    if (dev->getName() == "Aer Conditionat" && dev->getState()) runStatus = "RACESTE v";
+                for (const auto& h : heaters) {
+                    if (h->getState()) runStatus = "INCALZESTE ^";
+                }
+                for (const auto& ac : acUnits) {
+                    if (ac->getState()) runStatus = "RACESTE v";
                 }
             }
 
@@ -192,6 +219,15 @@ int main() {
                 edgeSlot = (edgeSlot + 1) % 4;
             }
         }
+
+        window.setView(window.getDefaultView());
+        sf::RectangleShape topHeader(sf::Vector2f(1200, 70)); topHeader.setFillColor(sf::Color(32, 38, 51)); window.draw(topHeader);
+        sf::Text globalText; globalText.setFont(font); globalText.setCharacterSize(18); globalText.setFillColor(sf::Color(52, 211, 153)); globalText.setPosition(30, 22);
+        globalText.setString("Temp Exterior: " + std::to_string(static_cast<int>(myHouse.getOutsideTemp())) + " C");
+        window.draw(globalText);
+        sf::RectangleShape panel(sf::Vector2f(300, 800)); panel.setPosition(900, 0); panel.setFillColor(sf::Color(28, 33, 46)); window.draw(panel);
+        for (auto& btn : buttons) { window.draw(btn.rect); window.draw(btn.text); }
+        
         window.display();
     }
     return 0;
